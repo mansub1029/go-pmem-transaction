@@ -7,6 +7,7 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -39,7 +40,8 @@ func randString(n int) []byte {
 	b := pmake([]byte, n) // transaction here
 	tx := transaction.NewUndoTx()
 	tx.Begin()
-	tx.Log(b)
+	//tx.Log(b)
+
 	for i := range b {
 		b[i] = byte(rand.Intn(26) + 65)
 	}
@@ -52,7 +54,7 @@ func randString(n int) []byte {
 func populateRoot(rptr *root) {
 	tx := transaction.NewUndoTx()
 	tx.Begin()
-	tx.Log(rptr)
+	//tx.Log(rptr)
 	rptr.magic = magic
 	rptr.head = nil
 	rptr.tail = nil
@@ -65,22 +67,50 @@ func populateRoot(rptr *root) {
 func addNode(rptr *root) {
 	entry := pnew(entry)
 	tx := transaction.NewUndoTx()
+
 	tx.Begin()
-	tx.Log(entry)
-	tx.Log(rptr)
+	//tx.Log(entry)
+	//tx.Log(rptr)
 	entry.id = rand.Intn(100)
 	entry.data = randString(10)
+	println(entry.id)
+	println(entry.data)
 
 	if rptr.head == nil {
 		rptr.head = entry
 	} else {
-		tx.Log(&rptr.tail.next)
+		//tx.Log(&rptr.tail.next)
 		rptr.tail.next = entry
 	}
 	rptr.tail = entry
 
 	tx.End()
 	transaction.Release(tx)
+
+}
+
+func iter_addNode(rptr *root, iter int) {
+	for i := 0; i < iter; i++ {
+		entry := pnew(entry)
+		tx := transaction.NewUndoTx()
+
+		tx.Begin()
+		entry.id = rand.Intn(100)
+		entry.data = randString(10)
+		//println(entry.id)
+		//println(entry.data)
+
+		if rptr.head == nil {
+			rptr.head = entry
+		} else {
+			//tx.Log(&rptr.tail.next)
+			rptr.tail.next = entry
+		}
+		rptr.tail = entry
+
+		tx.End()
+		transaction.Release(tx)
+	}
 
 }
 
@@ -95,7 +125,7 @@ func printNodes(rptr *root) {
 
 func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
-	firstInit := pmem.Init("/mnt/ext4-pmem0/database")
+	firstInit := pmem.Init("/mnt/pmem0/database_mssong_0")
 	var rptr *root
 	if firstInit {
 		// Create a new named object called dbRoot and point it to rptr
@@ -110,6 +140,8 @@ func main() {
 			populateRoot(rptr)
 		}
 	}
-	addNode(rptr)    // Add a new node in the linked list
+	fmt.Println("addNode start!")
+	iter_addNode(rptr, 1000000)
+	//addNode(rptr)    // Add a new node in the linked list
 	printNodes(rptr) // Print out the contents of the linked list
 }
